@@ -13,7 +13,7 @@ process SORTMERNA {
     tuple val(meta3), path(index)
 
     output:
-    tuple val(meta), path("*non_rRNA.fastq.gz"), emit: reads, optional: true
+    tuple val(meta), path("*non_rRNA.fastq"), emit: reads, optional: true
     tuple val(meta), path("*.log")             , emit: log, optional: true
     tuple val(meta2), path("idx")              , emit: index, optional: true
     path  "versions.yml"                       , emit: versions
@@ -41,13 +41,13 @@ process SORTMERNA {
         def n_fastq = paired_end ? reads.size() : 1
         if ( n_fastq == 1 ) {
             mv_cmd = """
-            mv non_rRNA_reads.f*q.gz ${prefix}.non_rRNA.fastq.gz
+            mv non_rRNA_reads.f*q ${prefix}.non_rRNA.fastq
             mv rRNA_reads.log ${prefix}.sortmerna.log
             """
         } else {
             mv_cmd = """
-            mv non_rRNA_reads_fwd.f*q.gz ${prefix}_1.non_rRNA.fastq.gz
-            mv non_rRNA_reads_rev.f*q.gz ${prefix}_2.non_rRNA.fastq.gz
+            mv non_rRNA_reads_fwd.f*q ${prefix}_1.non_rRNA.fastq
+            mv non_rRNA_reads_rev.f*q ${prefix}_2.non_rRNA.fastq
             mv rRNA_reads.log ${prefix}.sortmerna.log
             """
             paired_cmd = "--paired_in"
@@ -89,11 +89,10 @@ process SORTMERNA {
         reads_input = paired_end ? reads.collect{"--reads $it"}.join(' ') : "--reads $reads"
         def n_fastq = paired_end ? reads.size() : 1
         if ( n_fastq == 1 ) {
-            mv_cmd = "touch ${prefix}.non_rRNA.fastq.gz"
+            mv_cmd = "touch ${prefix}.non_rRNA.fastq"
         } else {
             mv_cmd = """
-            touch ${prefix}_1.non_rRNA.fastq.gz
-            touch ${prefix}_2.non_rRNA.fastq.gz
+            touch ${prefix}_1.non_rRNA.fastq
             """
         }
     }

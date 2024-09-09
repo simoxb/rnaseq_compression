@@ -17,8 +17,8 @@ process BBMAP_BBSPLIT {
 
     output:
     path "bbsplit"                            , optional:true, emit: index
-    tuple val(meta), path('*primary*fastq.gz'), optional:true, emit: primary_fastq
-    tuple val(meta), path('*fastq.gz')        , optional:true, emit: all_fastq
+    tuple val(meta), path('*primary*fastq'), optional:true, emit: primary_fastq
+    tuple val(meta), path('*fastq')        , optional:true, emit: all_fastq
     tuple val(meta), path('*txt')             , optional:true, emit: stats
     tuple val(meta), path('*.log')            , optional:true, emit: log
     path "versions.yml"                       , emit: versions
@@ -62,7 +62,7 @@ process BBMAP_BBSPLIT {
             log.error 'ERROR: Please either specify a BBSplit index as input or a primary fasta file along with names and paths to non-primary fasta files.'
         }
         fastq_in  = meta.single_end ? "in=${reads}" : "in=${reads[0]} in2=${reads[1]}"
-        fastq_out = meta.single_end ? "basename=${prefix}_%.fastq.gz" : "basename=${prefix}_%_#.fastq.gz"
+        fastq_out = meta.single_end ? "basename=${prefix}_%.fastq" : "basename=${prefix}_%_#.fastq"
         refstats_cmd = 'refstats=' + prefix + '.stats.txt'
     }
     """
@@ -108,7 +108,7 @@ process BBMAP_BBSPLIT {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def other_refs = ''
     other_ref_names.eachWithIndex { name, index ->
-        other_refs += "echo '' | gzip > ${prefix}_${name}.fastq.gz"
+        other_refs += "echo '' > ${prefix}_${name}.fastq"
     }
     """
     if [ ! -d bbsplit ]; then
@@ -116,7 +116,7 @@ process BBMAP_BBSPLIT {
     fi
 
     if ! (${only_build_index}); then
-        echo '' | gzip >  ${prefix}_primary.fastq.gz
+        echo '' >  ${prefix}_primary.fastq
         ${other_refs}
         touch ${prefix}.stats.txt
     fi
