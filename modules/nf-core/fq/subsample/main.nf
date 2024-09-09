@@ -11,7 +11,7 @@ process FQ_SUBSAMPLE {
     tuple val(meta), path(fastq)
 
     output:
-    tuple val(meta), path("*.fastq.gz"), emit: fastq
+    tuple val(meta), path("*.fastq"), emit: fastq
     path "versions.yml"                , emit: versions
 
     when:
@@ -32,11 +32,11 @@ process FQ_SUBSAMPLE {
     def n_fastq = fastq instanceof List ? fastq.size() : 1
     log.debug "FQ/SUBSAMPLE found ${n_fastq} FASTQ files"
     if ( n_fastq == 1 ){
-        fastq1_output = "--r1-dst ${prefix}.fastq.gz"
+        fastq1_output = "--r1-dst ${prefix}.fastq"
         fastq2_output = ""
     } else if ( n_fastq == 2 ){
-        fastq1_output = "--r1-dst ${prefix}_R1.fastq.gz"
-        fastq2_output = "--r2-dst ${prefix}_R2.fastq.gz"
+        fastq1_output = "--r1-dst ${prefix}_R1.fastq"
+        fastq2_output = "--r2-dst ${prefix}_R2.fastq"
     } else {
         error "FQ/SUBSAMPLE only accepts 1 or 2 FASTQ files!"
     }
@@ -56,9 +56,9 @@ process FQ_SUBSAMPLE {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    echo '' | gzip >  ${prefix}_R1.fastq.gz
-    echo '' | gzip >  ${prefix}_R2.fastq.gz
-
+    echo '' > ${prefix}_R1.fastq
+    echo '' > ${prefix}_R2.fastq
+    
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         fq: \$(echo \$(fq subsample --version | sed 's/fq-subsample //g'))

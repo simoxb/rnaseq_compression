@@ -11,7 +11,7 @@ process CAT_FASTQ {
     tuple val(meta), path(reads, stageAs: "input*/*")
 
     output:
-    tuple val(meta), path("*.merged.fastq.gz"), emit: reads
+    tuple val(meta), path("*.merged.fastq"), emit: reads
     path "versions.yml"                       , emit: versions
 
     when:
@@ -24,7 +24,7 @@ process CAT_FASTQ {
     if (meta.single_end) {
         if (readList.size >= 1) {
             """
-            cat ${readList.join(' ')} > ${prefix}.merged.fastq.gz
+            cat ${readList.join(' ')} > ${prefix}.merged.fastq
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
@@ -38,8 +38,8 @@ process CAT_FASTQ {
             def read2 = []
             readList.eachWithIndex{ v, ix -> ( ix & 1 ? read2 : read1 ) << v }
             """
-            cat ${read1.join(' ')} > ${prefix}_1.merged.fastq.gz
-            cat ${read2.join(' ')} > ${prefix}_2.merged.fastq.gz
+            cat ${read1.join(' ')} > ${prefix}_1.merged.fastq
+            cat ${read2.join(' ')} > ${prefix}_2.merged.fastq
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
@@ -55,7 +55,7 @@ process CAT_FASTQ {
     if (meta.single_end) {
         if (readList.size >= 1) {
             """
-            echo '' | gzip > ${prefix}.merged.fastq.gz
+            echo '' > ${prefix}.merged.fastq
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
@@ -66,8 +66,8 @@ process CAT_FASTQ {
     } else {
         if (readList.size >= 2) {
             """
-            echo '' | gzip > ${prefix}_1.merged.fastq.gz
-            echo '' | gzip > ${prefix}_2.merged.fastq.gz
+            echo '' > ${prefix}_1.merged.fastq
+            echo '' > ${prefix}_2.merged.fastq
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":

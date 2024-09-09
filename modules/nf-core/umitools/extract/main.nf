@@ -12,7 +12,7 @@ process UMITOOLS_EXTRACT {
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path("*.fastq.gz"), emit: reads
+    tuple val(meta), path("*.fastq"), emit: reads
     tuple val(meta), path("*.log")     , emit: log
     path  "versions.yml"               , emit: versions
 
@@ -27,7 +27,7 @@ process UMITOOLS_EXTRACT {
         umi_tools \\
             extract \\
             -I $reads \\
-            -S ${prefix}.umi_extract.fastq.gz \\
+            -S ${prefix}.umi_extract.fastq \\
             $args \\
             > ${prefix}.umi_extract.log
 
@@ -42,8 +42,8 @@ process UMITOOLS_EXTRACT {
             extract \\
             -I ${reads[0]} \\
             --read2-in=${reads[1]} \\
-            -S ${prefix}.umi_extract_1.fastq.gz \\
-            --read2-out=${prefix}.umi_extract_2.fastq.gz \\
+            -S ${prefix}.umi_extract_1.fastq \\
+            --read2-out=${prefix}.umi_extract_2.fastq \\
             $args \\
             > ${prefix}.umi_extract.log
 
@@ -57,10 +57,10 @@ process UMITOOLS_EXTRACT {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     if (meta.single_end) {
-        output_command = "echo '' | gzip > ${prefix}.umi_extract.fastq.gz"
+        output_command = "echo '' > ${prefix}.umi_extract.fastq"
     } else {
-        output_command = "echo '' | gzip > ${prefix}.umi_extract_1.fastq.gz ;"
-        output_command += "echo '' | gzip > ${prefix}.umi_extract_2.fastq.gz"
+        output_command = "echo '' > ${prefix}.umi_extract_1.fastq ;"
+        output_command += "echo '' > ${prefix}.umi_extract_2.fastq"
     }
     """
     touch ${prefix}.umi_extract.log
