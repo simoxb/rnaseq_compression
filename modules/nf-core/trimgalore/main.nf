@@ -11,9 +11,9 @@ process TRIMGALORE {
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path("*{3prime,5prime,trimmed,val}*.fq.gz"), emit: reads
+    tuple val(meta), path("*{3prime,5prime,trimmed,val}*.fq")	, emit: reads
     tuple val(meta), path("*report.txt")                        , emit: log     , optional: true
-    tuple val(meta), path("*unpaired*.fq.gz")                   , emit: unpaired, optional: true
+    tuple val(meta), path("*unpaired*.fq")                   	, emit: unpaired, optional: true
     tuple val(meta), path("*.html")                             , emit: html    , optional: true
     tuple val(meta), path("*.zip")                              , emit: zip     , optional: true
     path "versions.yml"                                         , emit: versions
@@ -40,12 +40,11 @@ process TRIMGALORE {
         def args_list = args.split("\\s(?=--)").toList()
         args_list.removeAll { it.toLowerCase().contains('_r2 ') }
         """
-        [ ! -f  ${prefix}.fastq.gz ] && ln -s $reads ${prefix}.fastq.gz
+        [ ! -f  ${prefix}.fastq ] && ln -s $reads ${prefix}.fastq
         trim_galore \\
             ${args_list.join(' ')} \\
             --cores $cores \\
-            --gzip \\
-            ${prefix}.fastq.gz
+            ${prefix}.fastq
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -55,15 +54,14 @@ process TRIMGALORE {
         """
     } else {
         """
-        [ ! -f  ${prefix}_1.fastq.gz ] && ln -s ${reads[0]} ${prefix}_1.fastq.gz
-        [ ! -f  ${prefix}_2.fastq.gz ] && ln -s ${reads[1]} ${prefix}_2.fastq.gz
+        [ ! -f  ${prefix}_1.fastq ] && ln -s ${reads[0]} ${prefix}_1.fastq
+        [ ! -f  ${prefix}_2.fastq ] && ln -s ${reads[1]} ${prefix}_2.fastq
         trim_galore \\
             $args \\
             --cores $cores \\
             --paired \\
-            --gzip \\
-            ${prefix}_1.fastq.gz \\
-            ${prefix}_2.fastq.gz
+            ${prefix}_1.fastq \\
+            ${prefix}_2.fastq
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -76,13 +74,13 @@ process TRIMGALORE {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     if (meta.single_end) {
-        output_command = "echo '' | gzip > ${prefix}_trimmed.fq.gz ;"
-        output_command += "touch ${prefix}.fastq.gz_trimming_report.txt"
+        output_command = "echo '' > ${prefix}_trimmed.fq ;"
+        output_command += "touch ${prefix}.fastq_trimming_report.txt"
     } else {
-        output_command = "echo '' | gzip > ${prefix}_1_trimmed.fq.gz ;"
-        output_command += "touch ${prefix}_1.fastq.gz_trimming_report.txt ;"
-        output_command += "echo '' | gzip > ${prefix}_2_trimmed.fq.gz ;"
-        output_command += "touch ${prefix}_2.fastq.gz_trimming_report.txt"
+        output_command = "echo '' > ${prefix}_1_trimmed.fq ;"
+        output_command += "touch ${prefix}_1.fastq_trimming_report.txt ;"
+        output_command += "echo '' > ${prefix}_2_trimmed.fq ;"
+        output_command += "touch ${prefix}_2.fastq_trimming_report.txt"
     }
     """
     ${output_command}

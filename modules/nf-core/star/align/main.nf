@@ -25,7 +25,7 @@ process STAR_ALIGN {
     tuple val(meta), path('*sortedByCoord.out.bam')  , optional:true, emit: bam_sorted
     tuple val(meta), path('*toTranscriptome.out.bam'), optional:true, emit: bam_transcript
     tuple val(meta), path('*Aligned.unsort.out.bam') , optional:true, emit: bam_unsorted
-    tuple val(meta), path('*fastq.gz')               , optional:true, emit: fastq
+    tuple val(meta), path('*fastq')               , optional:true, emit: fastq
     tuple val(meta), path('*.tab')                   , optional:true, emit: tab
     tuple val(meta), path('*.SJ.out.tab')            , optional:true, emit: spl_junc_tab
     tuple val(meta), path('*.ReadsPerGene.out.tab')  , optional:true, emit: read_per_gene_tab
@@ -63,11 +63,9 @@ process STAR_ALIGN {
 
     if [ -f ${prefix}.Unmapped.out.mate1 ]; then
         mv ${prefix}.Unmapped.out.mate1 ${prefix}.unmapped_1.fastq
-        gzip ${prefix}.unmapped_1.fastq
     fi
     if [ -f ${prefix}.Unmapped.out.mate2 ]; then
         mv ${prefix}.Unmapped.out.mate2 ${prefix}.unmapped_2.fastq
-        gzip ${prefix}.unmapped_2.fastq
     fi
 
     cat <<-END_VERSIONS > versions.yml
@@ -81,8 +79,8 @@ process STAR_ALIGN {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    echo "" | gzip > ${prefix}.unmapped_1.fastq.gz
-    echo "" | gzip > ${prefix}.unmapped_2.fastq.gz
+    echo "" > ${prefix}.unmapped_1.fastq
+    echo "" > ${prefix}.unmapped_2.fastq
     touch ${prefix}Xd.out.bam
     touch ${prefix}.Log.final.out
     touch ${prefix}.Log.out
