@@ -15,12 +15,12 @@ process FASTP {
     val   save_merged
 
     output:
-    tuple val(meta), path('*.fastp.fastq.gz') , optional:true, emit: reads
+    tuple val(meta), path('*.fastp.fastq') , optional:true, emit: reads
     tuple val(meta), path('*.json')           , emit: json
     tuple val(meta), path('*.html')           , emit: html
     tuple val(meta), path('*.log')            , emit: log
-    tuple val(meta), path('*.fail.fastq.gz')  , optional:true, emit: reads_fail
-    tuple val(meta), path('*.merged.fastq.gz'), optional:true, emit: reads_merged
+    tuple val(meta), path('*.fail.fastq')  , optional:true, emit: reads_fail
+    tuple val(meta), path('*.merged.fastq'), optional:true, emit: reads_merged
     path "versions.yml"                       , emit: versions
 
     when:
@@ -30,18 +30,18 @@ process FASTP {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
-    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : save_trimmed_fail && !meta.single_end ? "--failed_out ${prefix}.paired.fail.fastq.gz --unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
-    def out_fq1 = discard_trimmed_pass ?: ( meta.single_end ? "--out1 ${prefix}.fastp.fastq.gz" : "--out1 ${prefix}_1.fastp.fastq.gz" )
-    def out_fq2 = discard_trimmed_pass ?: "--out2 ${prefix}_2.fastp.fastq.gz"
+    def fail_fastq = save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq" : save_trimmed_fail && !meta.single_end ? "--failed_out ${prefix}.paired.fail.fastq --unpaired1 ${prefix}_1.fail.fastq --unpaired2 ${prefix}_2.fail.fastq" : ''
+    def out_fq1 = discard_trimmed_pass ?: ( meta.single_end ? "--out1 ${prefix}.fastp.fastq" : "--out1 ${prefix}_1.fastp.fastq" )
+    def out_fq2 = discard_trimmed_pass ?: "--out2 ${prefix}_2.fastp.fastq"
     // Added soft-links to original fastqs for consistent naming in MultiQC
     // Use single ended for interleaved. Add --interleaved_in in config.
     if ( task.ext.args?.contains('--interleaved_in') ) {
         """
-        [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
+        [ ! -f  ${prefix}.fastq ] && ln -sf $reads ${prefix}.fastq
 
         fastp \\
             --stdout \\
-            --in1 ${prefix}.fastq.gz \\
+            --in1 ${prefix}.fastq \\
             --thread $task.cpus \\
             --json ${prefix}.fastp.json \\
             --html ${prefix}.fastp.html \\
@@ -49,7 +49,7 @@ process FASTP {
             $fail_fastq \\
             $args \\
             2> >(tee ${prefix}.fastp.log >&2) \\
-        | gzip -c > ${prefix}.fastp.fastq.gz
+            > ${prefix}.fastp.fastq
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -58,10 +58,10 @@ process FASTP {
         """
     } else if (meta.single_end) {
         """
-        [ ! -f  ${prefix}.fastq.gz ] && ln -sf $reads ${prefix}.fastq.gz
+        [ ! -f  ${prefix}.fastq ] && ln -sf $reads ${prefix}.fastq
 
         fastp \\
-            --in1 ${prefix}.fastq.gz \\
+            --in1 ${prefix}.fastq \\
             $out_fq1 \\
             --thread $task.cpus \\
             --json ${prefix}.fastp.json \\
@@ -77,13 +77,13 @@ process FASTP {
         END_VERSIONS
         """
     } else {
-        def merge_fastq = save_merged ? "-m --merged_out ${prefix}.merged.fastq.gz" : ''
+        def merge_fastq = save_merged ? "-m --merged_out ${prefix}.merged.fastq" : ''
         """
-        [ ! -f  ${prefix}_1.fastq.gz ] && ln -sf ${reads[0]} ${prefix}_1.fastq.gz
-        [ ! -f  ${prefix}_2.fastq.gz ] && ln -sf ${reads[1]} ${prefix}_2.fastq.gz
+        [ ! -f  ${prefix}_1.fastq ] && ln -sf ${reads[0]} ${prefix}_1.fastq
+        [ ! -f  ${prefix}_2.fastq ] && ln -sf ${reads[1]} ${prefix}_2.fastq
         fastp \\
-            --in1 ${prefix}_1.fastq.gz \\
-            --in2 ${prefix}_2.fastq.gz \\
+            --in1 ${prefix}_1.fastq \\
+            --in2 ${prefix}_2.fastq \\
             $out_fq1 \\
             $out_fq2 \\
             --json ${prefix}.fastp.json \\
@@ -106,9 +106,9 @@ process FASTP {
     stub:
     def prefix              = task.ext.prefix ?: "${meta.id}"
     def is_single_output    = task.ext.args?.contains('--interleaved_in') || meta.single_end
-    def touch_reads         = (discard_trimmed_pass) ? "" : (is_single_output) ? "echo '' | gzip > ${prefix}.fastp.fastq.gz" : "echo '' | gzip > ${prefix}_1.fastp.fastq.gz ; echo '' | gzip > ${prefix}_2.fastp.fastq.gz"
-    def touch_merged        = (!is_single_output && save_merged) ? "echo '' | gzip >  ${prefix}.merged.fastq.gz" : ""
-    def touch_fail_fastq    = (!save_trimmed_fail) ? "" : meta.single_end ? "echo '' | gzip > ${prefix}.fail.fastq.gz" : "echo '' | gzip > ${prefix}.paired.fail.fastq.gz ; echo '' | gzip > ${prefix}_1.fail.fastq.gz ; echo '' | gzip > ${prefix}_2.fail.fastq.gz"
+    def touch_reads         = (discard_trimmed_pass) ? "" : (is_single_output) ? "echo '' > ${prefix}.fastp.fastq" : "echo '' > ${prefix}_1.fastp.fastq ; echo '' > ${prefix}_2.fastp.fastq"
+    def touch_merged        = (!is_single_output && save_merged) ? "echo '' >  ${prefix}.merged.fastq" : ""
+    def touch_fail_fastq    = (!save_trimmed_fail) ? "" : meta.single_end ? "echo '' > ${prefix}.fail.fastq" : "echo '' > ${prefix}.paired.fail.fastq ; echo '' > ${prefix}_1.fail.fastq ; echo '' > ${prefix}_2.fail.fastq"
     """
     $touch_reads
     $touch_fail_fastq
