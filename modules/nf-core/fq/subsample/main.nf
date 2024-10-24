@@ -11,7 +11,7 @@ process FQ_SUBSAMPLE {
     tuple val(meta), path(fastq)
 
     output:
-    tuple val(meta), path("*.fastq"), emit: fastq
+    tuple val(meta), path("*subsample*.f*q"), emit: fastq
     path "versions.yml"                , emit: versions
 
     when:
@@ -28,15 +28,15 @@ process FQ_SUBSAMPLE {
     if ( !(prob_exists || nrec_exists) ){
         error "FQ/SUBSAMPLE requires --probability (-p) or --record-count (-n) specified in task.ext.args!"
     }
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = "${meta.id}"
     def n_fastq = fastq instanceof List ? fastq.size() : 1
     log.debug "FQ/SUBSAMPLE found ${n_fastq} FASTQ files"
     if ( n_fastq == 1 ){
-        fastq1_output = "--r1-dst ${prefix}.fastq"
+        fastq1_output = "--r1-dst ${prefix}_subsample.fastq"
         fastq2_output = ""
     } else if ( n_fastq == 2 ){
-        fastq1_output = "--r1-dst ${prefix}_R1.fastq"
-        fastq2_output = "--r2-dst ${prefix}_R2.fastq"
+        fastq1_output = "--r1-dst ${prefix}_subsample_R1.fastq"
+        fastq2_output = "--r2-dst ${prefix}_subsample_R2.fastq"
     } else {
         error "FQ/SUBSAMPLE only accepts 1 or 2 FASTQ files!"
     }
