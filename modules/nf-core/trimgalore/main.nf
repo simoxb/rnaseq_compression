@@ -11,7 +11,7 @@ process TRIMGALORE {
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path("*tg_out*.fq")	, emit: reads
+    tuple val(meta), path("*trimmed*val_{1,2}.f*q")	, emit: reads
     tuple val(meta), path("*report.txt")                        , emit: log     , optional: true
     tuple val(meta), path("*unpaired*.fq")                   	, emit: unpaired, optional: true
     tuple val(meta), path("*.html")                             , emit: html    , optional: true
@@ -60,10 +60,10 @@ process TRIMGALORE {
             $args \\
             --cores $cores \\
             --paired \\
+            --dont_gzip \\
+            --basename ${meta.id}_tg_out \\
             ${prefix}_1.fastq \\
-            ${prefix}_2.fastq
-           mv ${prefix}_1.fastq ${meta.id}_tg_out_1.fq
-           mv ${prefix}_2.fastq ${meta.id}_tg_out_2.fq
+            ${prefix}_2.fastq 
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
